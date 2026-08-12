@@ -90,6 +90,16 @@ Display any `.txt` with `cat`, for example `cat animation/space/rocket.txt`.
 | space | `earth.txt`, `moon.txt`, `moon2.txt`, `rocket.txt`, `star.txt`, `stars.txt` |
 | tech | `computer.txt` |
 
+## Tests
+
+```sh
+./test-animations
+```
+
+Runs every animation the dispatcher offers, with no arguments, and reports any
+that error. An animation still drawing after two seconds counts as passing,
+since they loop until interrupted. Exits non-zero if any failed.
+
 ## Drawing new art
 
 `CLAUDE.md` documents the process and the Dracula palette used throughout.
