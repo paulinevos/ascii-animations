@@ -62,7 +62,7 @@ available, grouped by category.
 | `mountains_clouds` | nature | `mountains.txt` with clouds rolling past behind the peaks |
 | `sunset_gradient` | nature | `sunset.txt` with flapping birds, moving waves, and twinkling water |
 | `sunset_gradient_birds_only` | nature | `sunset.txt` with the birds animated and nothing else |
-| `thankyou_gradient` | messages | figlet "thank you / Laracon" with a gradient sweep (needs `figlet` on PATH) |
+| `thankyou_gradient` | messages | figlet "thank you / *name*" with a gradient sweep; takes an optional name, 1-16 alphanumeric characters, default `Laracon` (needs `figlet` on PATH) |
 
 Every animation loops until Ctrl-C.
 
