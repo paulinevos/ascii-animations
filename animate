@@ -2,42 +2,78 @@
 """Run an animation by name.
 
     animate sunset_gradient
+    animate nature/sunset_gradient
     animate divider_gradient divider_green.txt
 
-Any further arguments are passed on to the animation. With no name, or with a
-name that does not exist, it lists what is available. Ctrl-C to stop.
+Animations live in animation/<category>/, and a name may be given with or
+without its category. Any further arguments are passed on to the animation.
+With no name, or with a name that does not exist, it lists what is available.
+Ctrl-C to stop.
 """
 
+import glob
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ANIMATIONS = os.path.join(HERE, "animation")
 EXTENSION = ".py"
 
 
-def animations():
-    """The runnable animations, by the name you pass to this command."""
-    return sorted(
-        entry[: -len(EXTENSION)]
-        for entry in os.listdir(HERE)
-        if entry.endswith(EXTENSION)
-    )
+def scripts():
+    """Every animation script, in category then name order."""
+    return sorted(glob.glob(os.path.join(ANIMATIONS, "*", f"*{EXTENSION}")))
+
+
+def name_of(script):
+    return os.path.basename(script)[: -len(EXTENSION)]
+
+
+def category_of(script):
+    return os.path.basename(os.path.dirname(script))
+
+
+def qualified_name_of(script):
+    return f"{category_of(script)}/{name_of(script)}"
+
+
+def matching(animation):
+    """The scripts an animation name could refer to."""
+    return [
+        script
+        for script in scripts()
+        if animation in (name_of(script), qualified_name_of(script))
+    ]
 
 
 def usage():
-    lines = ["Usage: animate <animation> [arguments...]", "", "Animations:"]
-    lines.extend(f"    {animation}" for animation in animations())
-    return "\n".join(lines)
+    lines = ["Usage: animate <animation> [arguments...]", ""]
+    for category, animations in grouped().items():
+        lines.append(f"{category}:")
+        lines.extend(f"    {animation}" for animation in animations)
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def grouped():
+    """Animation names by category, both in alphabetical order."""
+    categories = {}
+    for script in scripts():
+        categories.setdefault(category_of(script), []).append(name_of(script))
+    return categories
 
 
 def run(animation, arguments):
-    script = os.path.join(HERE, f"{animation}{EXTENSION}")
-    if not os.path.isfile(script):
+    matches = matching(animation)
+    if not matches:
         sys.exit(f"There is no animation named {animation!r}.\n\n{usage()}")
+    if len(matches) > 1:
+        ambiguous = ", ".join(qualified_name_of(script) for script in matches)
+        sys.exit(f"{animation!r} could mean any of: {ambiguous}")
     # Hand the terminal over rather than spawning a child: the animation then
     # owns this process, so Ctrl-C, output buffering and cursor handling behave
     # exactly as they do when the script is run directly.
-    os.execv(sys.executable, [sys.executable, script, *arguments])
+    os.execv(sys.executable, [sys.executable, matches[0], *arguments])
 
 
 def main():
