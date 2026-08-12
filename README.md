@@ -53,7 +53,7 @@ available, grouped by category.
 
 | Animation | Category | What it does |
 |---|---|---|
-| `computer_typing` | tech | `computer.txt` with commands typed into its screen, cursor blinking |
+| `computer_typing` | tech | `computer.txt` with lines typed into its screen, cursor blinking. `--handle NAME` writes `@NAME` on the case (alphanumeric, at most 12 characters; left out, that part of the case stays blank); any further arguments are the lines to type, truncated to the screen's width, e.g. `./animate computer_typing --handle pauline "jj st" "jj log"` |
 | `diamond_gradient` | shapes | `diamond.txt` with a color gradient scrolling top to bottom |
 | `divider_gradient` | decoration | A divider shimmering in lighter and darker hues of its own color |
 | `heart_gradient` | shapes | A heart whose color and fill texture scroll on the same wave |

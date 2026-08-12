@@ -4,9 +4,18 @@
 The art is reproduced exactly as drawn; commands are typed into the blank rows
 inside the monitor, character by character, with a blinking cursor. Each row
 keeps its own color from the file, and the typed text gets its own.
+
+    computer_typing [--handle HANDLE] [line ...]
+
+--handle  the handle written on the case, without its "@": alphanumeric, at
+          most 12 characters. Left out, that part of the case stays blank.
+line      a line to type, in order; longer than the screen is truncated. With
+          none given, the default commands are typed.
+
 Ctrl-C to stop.
 """
 
+import argparse
 import os
 import re
 import sys
@@ -24,9 +33,58 @@ BLINK = 4  # frames per cursor on/off phase
 CURSOR = "_"
 PROMPT = "-"  # the character the art already uses as the prompt
 
-# Typed in order, then the cycle repeats. Each must fit the screen's usable
-# width; build_frames() asserts that rather than letting it overflow the case.
+# Typed in order, then the cycle repeats, when no lines are given.
 COMMANDS = ("jj st", "jj log", "jj new", "jj desc")
+
+# The handle drawn on the case, e.g. "@vanamerongen". Found rather than
+# positioned, so the art stays the one source of truth for where it sits.
+HANDLE_IN_ART = re.compile(r"@[A-Za-z0-9]+")
+HANDLE_ALLOWED = re.compile(r"\A[A-Za-z0-9]+\Z")
+HANDLE_LIMIT = 12
+
+
+def parse_arguments(argv):
+    parser = argparse.ArgumentParser(
+        prog="computer_typing",
+        description="Type lines into computer.txt.",
+    )
+    parser.add_argument(
+        "--handle",
+        default=None,
+        help="handle on the case, without its @",
+    )
+    parser.add_argument("lines", nargs="*", help="lines to type, in order")
+    return parser.parse_args(argv)
+
+
+def validated_handle(handle):
+    """The handle as it should appear, or "" for no handle at all."""
+    if handle is None:
+        return ""
+    if HANDLE_ALLOWED.match(handle) and len(handle) <= HANDLE_LIMIT:
+        return f"@{handle}"
+    sys.exit(
+        f"--handle must be alphanumeric and at most {HANDLE_LIMIT} "
+        f"characters (the @ is added for you); got {handle!r}"
+    )
+
+
+def with_handle(rows, handle):
+    """The art rows with the handle it was drawn with replaced by this one."""
+    return [(color, substituted(text, handle)) for color, text in rows]
+
+
+def substituted(text, handle):
+    """Text with its handle swapped, padded to the drawn handle's width.
+
+    The padding is what keeps the case edge to the right of the handle in its
+    own column whatever length the new handle is, blank included.
+    """
+    drawn = HANDLE_IN_ART.search(text)
+    if not drawn:
+        return text
+    padded = handle.ljust(len(drawn.group(0)))
+    return text[: drawn.start()] + padded + text[drawn.end() :]
 
 
 def load():
@@ -59,7 +117,7 @@ def find_screen(rows):
     return screen
 
 
-def build_frames(rows):
+def build_frames(rows, lines):
     screen = find_screen(rows)
     if not screen:
         sys.exit("no screen rows found in the art")
@@ -70,13 +128,13 @@ def build_frames(rows):
     # right of it isn't enough for these commands.
     y, left, stop = screen[0]
     room = stop - left
-    too_long = [c for c in COMMANDS if len(c) + 1 > room]
-    if too_long:
-        sys.exit(f"{too_long} do not fit the {room}-cell screen")
+    # One cell short of the interior, so the cursor after the last character
+    # still has somewhere to blink without pushing into the bezel.
+    typed_lines = [line[: room - 1] for line in lines]
 
     # (text so far, cursor visible) for every frame of the loop.
     beats = []
-    for command in COMMANDS:
+    for command in typed_lines:
         for i in range(1, len(command) + 1):
             beats += [(command[:i], True)] * FRAMES_PER_CHAR
         for f in range(HOLD):
@@ -102,7 +160,9 @@ def build_frames(rows):
 
 
 def main():
-    frames = build_frames(load())
+    arguments = parse_arguments(sys.argv[1:])
+    handle = validated_handle(arguments.handle)
+    frames = build_frames(with_handle(load(), handle), arguments.lines or COMMANDS)
 
     sys.stdout.write("\033[?25l\033[2J")  # hide cursor, clear once
     try:
