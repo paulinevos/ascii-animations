@@ -18,31 +18,41 @@ Then reference the assets from a slide's executable code block:
 
 ````markdown
 ```bash +exec_replace +no_background
-python3 assets/sunset_gradient.py
+assets/animate sunset_gradient
 ```
 ````
 
-## Animations
+## Running animations
 
-| Script | What it does |
-|---|---|
-| `computer_typing.py` | `computer.txt` with commands typed into its screen, cursor blinking |
-| `diamond_gradient.py` | `diamond.txt` with a color gradient scrolling top to bottom |
-| `divider_gradient.py` | A divider shimmering in lighter and darker hues of its own color |
-| `heart_gradient.py` | A heart whose color and fill texture scroll on the same wave |
-| `heartbeat.py` | A beating heart |
-| `moon_gradient.py` | `moon.txt` with stars twinkling out of step with each other |
-| `mountains_clouds.py` | `mountains.txt` with clouds rolling past behind the peaks |
-| `sunset_gradient.py` | `sunset.txt` with flapping birds, moving waves, and twinkling water |
-| `sunset_gradient_birds_only.py` | `sunset.txt` with the birds animated and nothing else |
-| `thankyou_gradient.py` | figlet "thank you / Laracon" with a gradient sweep (needs `figlet` on PATH) |
-
-Every script loops until Ctrl-C.
-
-`divider_gradient.py` takes the name of a divider art file as its argument:
+`animate` runs any animation by name, without the `.py` extension:
 
 ```sh
-python3 divider_gradient.py divider_green.txt
+./animate sunset_gradient
+```
+
+It works from any working directory. Run it with no arguments to list what is
+available.
+
+| Animation | What it does |
+|---|---|
+| `computer_typing` | `computer.txt` with commands typed into its screen, cursor blinking |
+| `diamond_gradient` | `diamond.txt` with a color gradient scrolling top to bottom |
+| `divider_gradient` | A divider shimmering in lighter and darker hues of its own color |
+| `heart_gradient` | A heart whose color and fill texture scroll on the same wave |
+| `heartbeat` | A beating heart |
+| `moon_gradient` | `moon.txt` with stars twinkling out of step with each other |
+| `mountains_clouds` | `mountains.txt` with clouds rolling past behind the peaks |
+| `sunset_gradient` | `sunset.txt` with flapping birds, moving waves, and twinkling water |
+| `sunset_gradient_birds_only` | `sunset.txt` with the birds animated and nothing else |
+| `thankyou_gradient` | figlet "thank you / Laracon" with a gradient sweep (needs `figlet` on PATH) |
+
+Every animation loops until Ctrl-C.
+
+Further arguments are passed through to the animation. `divider_gradient` takes
+the name of a divider art file:
+
+```sh
+./animate divider_gradient divider_green.txt
 ```
 
 Divider colors: `cyan`, `green`, `lavender`, `orange`, `red`, `white`, `yellow`,
