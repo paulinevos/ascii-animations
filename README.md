@@ -7,6 +7,22 @@ true-color escape codes.
 Every script resolves its art file relative to its own location, so the scripts
 run correctly from any working directory.
 
+## Layout
+
+Animations and their art are grouped by category under `animation/`:
+
+```
+animation/decoration/   dividers
+animation/messages/     thank-yous and banners
+animation/nature/       mountains, sunsets, plants
+animation/objects/      books, notes
+animation/shapes/       hearts, diamonds
+animation/space/        moon, stars, earth, rockets
+animation/tech/         computers
+```
+
+Each category holds its animation scripts next to the `.txt` art they draw.
+
 ## Use as a submodule
 
 ```sh
@@ -24,27 +40,29 @@ assets/animate sunset_gradient
 
 ## Running animations
 
-`animate` runs any animation by name, without the `.py` extension:
+`animate` runs any animation by name, without the `.py` extension. The category
+is optional, and only needed to disambiguate:
 
 ```sh
 ./animate sunset_gradient
+./animate nature/sunset_gradient
 ```
 
 It works from any working directory. Run it with no arguments to list what is
-available.
+available, grouped by category.
 
-| Animation | What it does |
-|---|---|
-| `computer_typing` | `computer.txt` with commands typed into its screen, cursor blinking |
-| `diamond_gradient` | `diamond.txt` with a color gradient scrolling top to bottom |
-| `divider_gradient` | A divider shimmering in lighter and darker hues of its own color |
-| `heart_gradient` | A heart whose color and fill texture scroll on the same wave |
-| `heartbeat` | A beating heart |
-| `moon_gradient` | `moon.txt` with stars twinkling out of step with each other |
-| `mountains_clouds` | `mountains.txt` with clouds rolling past behind the peaks |
-| `sunset_gradient` | `sunset.txt` with flapping birds, moving waves, and twinkling water |
-| `sunset_gradient_birds_only` | `sunset.txt` with the birds animated and nothing else |
-| `thankyou_gradient` | figlet "thank you / Laracon" with a gradient sweep (needs `figlet` on PATH) |
+| Animation | Category | What it does |
+|---|---|---|
+| `computer_typing` | tech | `computer.txt` with commands typed into its screen, cursor blinking |
+| `diamond_gradient` | shapes | `diamond.txt` with a color gradient scrolling top to bottom |
+| `divider_gradient` | decoration | A divider shimmering in lighter and darker hues of its own color |
+| `heart_gradient` | shapes | A heart whose color and fill texture scroll on the same wave |
+| `heartbeat` | shapes | A beating heart |
+| `moon_gradient` | space | `moon.txt` with stars twinkling out of step with each other |
+| `mountains_clouds` | nature | `mountains.txt` with clouds rolling past behind the peaks |
+| `sunset_gradient` | nature | `sunset.txt` with flapping birds, moving waves, and twinkling water |
+| `sunset_gradient_birds_only` | nature | `sunset.txt` with the birds animated and nothing else |
+| `thankyou_gradient` | messages | figlet "thank you / Laracon" with a gradient sweep (needs `figlet` on PATH) |
 
 Every animation loops until Ctrl-C.
 
@@ -60,10 +78,17 @@ plus the uncolored `divider.txt`.
 
 ## Static art
 
-`book.txt`, `computer.txt`, `diamond.txt`, `earth.txt`, `flower.txt`, `moon.txt`,
-`moon2.txt`, `mountains.txt`, `note.txt`, `rocket.txt`, `sharing.txt`,
-`spiral.txt`, `star.txt`, `stars.txt`, `sun.txt`, `sunny.txt`, `sunset.txt`,
-`tree.txt`, `wave.txt` — display with `cat`.
+Display any `.txt` with `cat`, for example `cat animation/space/rocket.txt`.
+
+| Category | Art |
+|---|---|
+| decoration | `divider.txt` and `divider_{cyan,green,lavender,orange,red,white,yellow}.txt` |
+| messages | `sharing.txt` |
+| nature | `flower.txt`, `mountains.txt`, `sun.txt`, `sunny.txt`, `sunset.txt`, `tree.txt`, `wave.txt` |
+| objects | `book.txt`, `note.txt`, `spiral.txt` |
+| shapes | `diamond.txt` |
+| space | `earth.txt`, `moon.txt`, `moon2.txt`, `rocket.txt`, `star.txt`, `stars.txt` |
+| tech | `computer.txt` |
 
 ## Drawing new art
 
