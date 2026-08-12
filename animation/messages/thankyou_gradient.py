@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""thank you / Laracon, rendered with figlet's own letterforms.
+"""thank you / <name>, rendered with figlet's own letterforms.
 
-The Laracon block gets a horizontal color gradient scrolling top to bottom on
-a loop; the "thank you" above it stays plain white. The heart suffixed to the
-word is filled from a density ramp riding that same wave, so its texture
-scrolls with the color. Requires figlet on PATH. Ctrl-C to stop.
+    thankyou_gradient [name]
+
+The name defaults to "Laracon" and must be 1-16 alphanumeric characters. Its
+block gets a horizontal color gradient scrolling top to bottom on a loop; the
+"thank you" above it stays plain white. The heart suffixed to the name is
+filled from a density ramp riding that same wave, so its texture scrolls with
+the color. A long name in the roman font can be wider than the terminal, in
+which case the script refuses to run rather than wrapping every row into
+nonsense. Requires figlet on PATH. Ctrl-C to stop.
 """
 
 import random
@@ -37,6 +42,9 @@ HEART_GAP = 2  # blank columns between the last letter and the heart
 CHARS = ":;+*=%#@"
 NOISE = 2.2  # per-cell jitter in ramp steps; 0 = clean bands, higher = grainier
 SEED = 7  # fixed so the grain is stable across frames and runs
+
+DEFAULT_NAME = "Laracon"
+MAXIMUM_NAME_LENGTH = 16
 
 # Hand-drawn rather than derived from the heart equation: at seven rows the
 # equation loses the top cleft, and without that a small heart reads as a
@@ -126,15 +134,43 @@ def build_frames(head, letters, width):
     return frames
 
 
+def name_from(arguments):
+    """The name to thank: the sole optional positional argument."""
+    if not arguments:
+        return DEFAULT_NAME
+    if len(arguments) > 1:
+        sys.exit(f"Expected at most one name, got {len(arguments)}: {' '.join(arguments)}")
+    name = arguments[0]
+    if not name.isalnum() or len(name) > MAXIMUM_NAME_LENGTH:
+        sys.exit(
+            f"The name must be 1-{MAXIMUM_NAME_LENGTH} alphanumeric characters "
+            f"(letters and digits, no spaces or punctuation), got {name!r}."
+        )
+    return name
+
+
 def main():
     if not shutil.which("figlet"):
         sys.exit("figlet not found on PATH (brew install figlet)")
 
+    name = name_from(sys.argv[1:])
     head = figlet("thank you", "small")
-    letters = figlet("Laracon", "roman")
+    letters = figlet(name, "roman")
     # width from the widest possible body, so the centering never shifts as
     # the heart's texture changes between frames
     width = max(len(line) for line in head + suffix(letters, HEART_MASK, HEART_GAP))
+
+    # Every row is padded to this width, so a terminal narrower than it wraps
+    # each row in two and the block stops reading as letters at all. Refusing
+    # is more useful than rendering that. Only when attached to a terminal:
+    # otherwise get_terminal_size reports its 80-column fallback, which would
+    # reject even the default name when the output is piped or captured.
+    columns = shutil.get_terminal_size().columns
+    if sys.stdout.isatty() and width > columns:
+        sys.exit(
+            f"{name!r} needs {width} columns in the roman font, but the terminal "
+            f"is {columns} wide. Use a shorter name or a wider terminal."
+        )
 
     frames = build_frames(head, letters, width)
 
