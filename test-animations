@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Run every animation through ./animate and report the ones that error.
+
+    ./test-animations
+
+Animations loop until interrupted, so there is no "finished successfully" to
+wait for: an animation that is still drawing after a couple of seconds is a
+passing animation. Each one is given that long, then stopped.
+
+Named "test-animations" rather than "test" so it can never be confused with the
+shell builtin of that name.
+"""
+
+import importlib.machinery
+import importlib.util
+import os
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+DISPATCHER = os.path.join(HERE, "animate")
+GRACE = 2.0  # seconds an animation is left running before it counts as passing
+
+
+def dispatcher():
+    """The animate script, imported for the animation names it discovers.
+
+    Importing it keeps this test honest: it checks exactly the animations the
+    dispatcher offers, so the two can never drift apart. animate has no .py
+    extension, hence the explicit source loader.
+    """
+    loader = importlib.machinery.SourceFileLoader("animate", DISPATCHER)
+    spec = importlib.util.spec_from_loader("animate", loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+def animations():
+    module = dispatcher()
+    return [module.qualified_name_of(script) for script in module.scripts()]
+
+
+def failure(animation):
+    """What an animation printed on stderr, or None when it ran happily."""
+    process = subprocess.Popen(
+        [sys.executable, DISPATCHER, animation],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        errors = process.communicate(timeout=GRACE)[1]
+    except subprocess.TimeoutExpired:
+        return still_drawing(process)
+    if process.returncode == 0:
+        return None
+    return errors.decode().strip() or f"exited with status {process.returncode}"
+
+
+def still_drawing(process):
+    """None — an animation that outlives the grace period is a passing one."""
+    process.terminate()
+    process.communicate()
+    return None
+
+
+def outcome(error):
+    if error:
+        return "FAIL"
+    return "ok  "
+
+
+def main():
+    failures = {}
+    for animation in animations():
+        error = failure(animation)
+        print(f"{outcome(error)} {animation}", flush=True)
+        if error:
+            failures[animation] = error
+    report(failures)
+
+
+def report(failures):
+    if not failures:
+        print("\nall animations ran")
+        return
+    print(f"\n{len(failures)} failed:")
+    for animation, error in failures.items():
+        print(f"\n{animation}:\n{error}")
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
