@@ -26,7 +26,7 @@ Each category holds its animation scripts next to the `.txt` art they draw.
 ## Use as a submodule
 
 ```sh
-git submodule add https://github.com/<you>/ascii-animations.git assets
+git submodule add https://github.com/paulinevos/ascii-animations.git assets
 git submodule update --init --recursive
 ```
 
