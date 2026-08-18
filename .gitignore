@@ -6,3 +6,4 @@ tape/
 *.tape
 *.swp
 CLAUDE.md
+.claude
