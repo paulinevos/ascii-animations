@@ -12,6 +12,8 @@ Looping ASCII art animations for your terminal. Static art lives in `.txt` files
 the `.py` scripts animate it with ANSI true-color escape codes. 
 Art is partially sourced from www.asciiart.eu :)
 
+See [DEMO.md](DEMO.md) for gifs of the animations running.
+
 ## Requirements
 
 Python 3, with no third-party packages. The figlet-based animations also need
