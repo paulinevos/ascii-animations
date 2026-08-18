@@ -1,3 +1,11 @@
+```
+                _ _                   _                 _   _
+  __ _ ___  ___(_|_)       __ _ _ __ (_)_ __ ___   __ _| |_(_) ___  _ __  ___
+ / _` / __|/ __| | |_____ / _` | '_ \| | '_ ` _ \ / _` | __| |/ _ \| '_ \/ __|
+| (_| \__ \ (__| | |_____| (_| | | | | | | | | | | (_| | |_| | (_) | | | \__ \
+ \__,_|___/\___|_|_|      \__,_|_| |_|_|_| |_| |_|\__,_|\__|_|\___/|_| |_|___/
+```
+
 # ascii-animations
 
 ASCII art and terminal animations for [presenterm](https://github.com/mfontanini/presenterm)
@@ -6,6 +14,15 @@ true-color escape codes.
 
 Every script resolves its art file relative to its own location, so the scripts
 run correctly from any working directory.
+
+## Requirements
+
+Python 3, with no third-party packages. The figlet-based animations also need
+figlet:
+
+```sh
+brew install figlet
+```
 
 ## Layout
 
@@ -22,6 +39,7 @@ animation/tech/         computers
 ```
 
 Each category holds its animation scripts next to the `.txt` art they draw.
+Some categories, such as `objects/`, are art only.
 
 ## Use as a submodule
 
