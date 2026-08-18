@@ -8,12 +8,9 @@
 
 # ascii-animations
 
-ASCII art and terminal animations for [presenterm](https://github.com/mfontanini/presenterm)
-slides. Static art lives in `.txt` files; the `.py` scripts animate it with ANSI
-true-color escape codes.
-
-Every script resolves its art file relative to its own location, so the scripts
-run correctly from any working directory.
+Looping ASCII art animations for your terminal. Static art lives in `.txt` files; 
+the `.py` scripts animate it with ANSI true-color escape codes. 
+Art is partially sourced from www.asciiart.eu :)
 
 ## Requirements
 
@@ -66,24 +63,8 @@ is optional, and only needed to disambiguate:
 ./animate nature/sunset_gradient
 ```
 
-It works from any working directory. Run it with no arguments to list what is
+Run it with no arguments to list what is
 available, grouped by category.
-
-| Animation | Category | What it does |
-|---|---|---|
-| `computer_typing` | tech | `computer.txt` with commands typed into its screen, cursor blinking |
-| `diamond_gradient` | shapes | `diamond.txt` with a color gradient scrolling top to bottom |
-| `divider_gradient` | decoration | A divider shimmering in lighter and darker hues of its own color |
-| `figlet_text` | messages | Any text rendered with figlet, animated; font, color, style and speed all selectable |
-| `heart_gradient` | shapes | A heart whose color and fill texture scroll on the same wave |
-| `heartbeat` | shapes | A beating heart |
-| `moon_gradient` | space | `moon.txt` with stars twinkling out of step with each other |
-| `mountains_clouds` | nature | `mountains.txt` with clouds rolling past behind the peaks |
-| `sunset_gradient` | nature | `sunset.txt` with flapping birds, moving waves, and twinkling water |
-| `sunset_gradient_birds_only` | nature | `sunset.txt` with the birds animated and nothing else |
-| `thankyou_gradient` | messages | figlet "thank you / *name*" with a gradient sweep; takes an optional name, 1-16 alphanumeric characters, default `Laracon` (needs `figlet` on PATH) |
-
-Every animation loops until Ctrl-C.
 
 Further arguments are passed through to the animation. `divider_gradient` takes
 the name of a divider art file:
@@ -95,7 +76,7 @@ the name of a divider art file:
 Divider colors: `cyan`, `green`, `lavender`, `orange`, `red`, `white`, `yellow`,
 plus the uncolored `divider.txt`.
 
-`figlet_text` takes the text to draw, then flags:
+### Text animations
 
 ```sh
 ./animate figlet_text "Hello there"
@@ -114,20 +95,3 @@ plus the uncolored `divider.txt`.
 `rainbow` travels through the palette; a single color shimmers in lighter and
 darker hues of itself.
 
-## Static art
-
-Display any `.txt` with `cat`, for example `cat animation/space/rocket.txt`.
-
-| Category | Art |
-|---|---|
-| decoration | `divider.txt` and `divider_{cyan,green,lavender,orange,red,white,yellow}.txt` |
-| messages | `sharing.txt` |
-| nature | `flower.txt`, `mountains.txt`, `sun.txt`, `sunny.txt`, `sunset.txt`, `tree.txt`, `wave.txt` |
-| objects | `book.txt`, `note.txt`, `spiral.txt` |
-| shapes | `diamond.txt` |
-| space | `earth.txt`, `moon.txt`, `moon2.txt`, `rocket.txt`, `star.txt`, `stars.txt` |
-| tech | `computer.txt` |
-
-## Drawing new art
-
-`CLAUDE.md` documents the process and the Dracula palette used throughout.
