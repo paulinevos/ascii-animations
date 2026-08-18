@@ -5,10 +5,13 @@ The art is reproduced exactly as drawn; commands are typed into the blank rows
 inside the monitor, character by character, with a blinking cursor. Each row
 keeps its own color from the file, and the typed text gets its own.
 
-    computer_typing [--handle HANDLE] [line ...]
+    computer_typing [--handle HANDLE] [--name NAME] [line ...]
 
 --handle  the handle written on the case, without its "@": alphanumeric, at
           most 12 characters. Left out, that part of the case stays blank.
+--name    the name written on the case above the handle: letters, spaces and
+          the punctuation names carry, at most 19 characters. Left out, that
+          part of the case stays blank.
 line      a line to type, in order; longer than the screen is truncated. With
           none given, the default commands are typed.
 
@@ -42,6 +45,18 @@ HANDLE_IN_ART = re.compile(r"@[A-Za-z0-9]+")
 HANDLE_ALLOWED = re.compile(r"\A[A-Za-z0-9]+\Z")
 HANDLE_LIMIT = 12
 
+# The name drawn on the case, above the handle. There is no "@" to recognise it
+# by, so it is matched literally — together with the spaces that follow it,
+# which are slack the name can grow into without shoving the cable's ")" out of
+# its column.
+DRAWN_NAME = "pauline vos"
+NAME_SLACK = 8
+NAME_IN_ART = re.compile(re.escape(DRAWN_NAME) + " " * NAME_SLACK)
+# Letters, spaces and the punctuation names actually carry. Anchored on a
+# letter so a name cannot start with a space and drift out of its column.
+NAME_ALLOWED = re.compile(r"\A[A-Za-z][A-Za-z .'-]*\Z")
+NAME_LIMIT = len(DRAWN_NAME) + NAME_SLACK
+
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser(
@@ -52,6 +67,11 @@ def parse_arguments(argv):
         "--handle",
         default=None,
         help="handle on the case, without its @",
+    )
+    parser.add_argument(
+        "--name",
+        default=None,
+        help="name on the case, above the handle",
     )
     parser.add_argument("lines", nargs="*", help="lines to type, in order")
     return parser.parse_args(argv)
@@ -69,21 +89,36 @@ def validated_handle(handle):
     )
 
 
-def with_handle(rows, handle):
-    """The art rows with the handle it was drawn with replaced by this one."""
-    return [(color, substituted(text, handle)) for color, text in rows]
+def validated_name(name):
+    """The name as it should appear, or "" for no name at all."""
+    if name is None:
+        return ""
+    if NAME_ALLOWED.match(name) and len(name) <= NAME_LIMIT:
+        return name
+    sys.exit(
+        f"--name must start with a letter, hold only letters, spaces, "
+        f"'.', '-' and \"'\", and be at most {NAME_LIMIT} characters; "
+        f"got {name!r}"
+    )
 
 
-def substituted(text, handle):
-    """Text with its handle swapped, padded to the drawn handle's width.
+def relabelled(rows, drawn_label, replacement):
+    """The art rows with a label it was drawn with replaced by this one."""
+    return [
+        (color, substituted(text, drawn_label, replacement)) for color, text in rows
+    ]
 
-    The padding is what keeps the case edge to the right of the handle in its
-    own column whatever length the new handle is, blank included.
+
+def substituted(text, drawn_label, replacement):
+    """Text with a drawn label swapped, padded to the width it was drawn at.
+
+    The padding is what keeps the case edge to the right of the label in its
+    own column whatever length the replacement is, blank included.
     """
-    drawn = HANDLE_IN_ART.search(text)
+    drawn = drawn_label.search(text)
     if not drawn:
         return text
-    padded = handle.ljust(len(drawn.group(0)))
+    padded = replacement.ljust(len(drawn.group(0)))
     return text[: drawn.start()] + padded + text[drawn.end() :]
 
 
@@ -161,8 +196,9 @@ def build_frames(rows, lines):
 
 def main():
     arguments = parse_arguments(sys.argv[1:])
-    handle = validated_handle(arguments.handle)
-    frames = build_frames(with_handle(load(), handle), arguments.lines or COMMANDS)
+    labelled = relabelled(load(), HANDLE_IN_ART, validated_handle(arguments.handle))
+    labelled = relabelled(labelled, NAME_IN_ART, validated_name(arguments.name))
+    frames = build_frames(labelled, arguments.lines or COMMANDS)
 
     sys.stdout.write("\033[?25l\033[2J")  # hide cursor, clear once
     try:
