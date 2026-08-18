@@ -126,10 +126,14 @@ def cell(color, x, char, step):
 STYLES = {"wave": wave, "wave-h": wave_horizontal, "pulse": pulse}
 
 
-def centered(block):
-    """The block padded so every row sits centred on the widest one."""
-    width = max(len(line.rstrip()) for line in block)
-    return [line.rstrip().center(width) for line in block]
+def trimmed(block):
+    """The block with its trailing blanks dropped, alignment left alone.
+
+    Centring each row on its own would shift the short ones — the tops of the
+    letters, which figlet draws with nothing to their right — rightwards out of
+    line with the stems below them.
+    """
+    return [line.rstrip() for line in block]
 
 
 def build_frames(block, style, color):
@@ -171,7 +175,7 @@ def main():
         sys.exit("figlet not found on PATH (brew install figlet)")
 
     options = arguments()
-    block = centered(figlet(options.text, options.font))
+    block = trimmed(figlet(options.text, options.font))
     frames = build_frames(block, STYLES[options.style], color_of(options.color))
     animate(frames, SPEEDS[options.speed])
 

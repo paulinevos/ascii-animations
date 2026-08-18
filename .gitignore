@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .DS_Store
 .claude/settings.local.json
+tape/
+*.tape
+*.swp
