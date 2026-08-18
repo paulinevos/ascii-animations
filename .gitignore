@@ -5,3 +5,4 @@ __pycache__/
 tape/
 *.tape
 *.swp
+CLAUDE.md
