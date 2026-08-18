@@ -74,6 +74,7 @@ available, grouped by category.
 | `computer_typing` | tech | `computer.txt` with commands typed into its screen, cursor blinking |
 | `diamond_gradient` | shapes | `diamond.txt` with a color gradient scrolling top to bottom |
 | `divider_gradient` | decoration | A divider shimmering in lighter and darker hues of its own color |
+| `figlet_text` | messages | Any text rendered with figlet, animated; font, color, style and speed all selectable |
 | `heart_gradient` | shapes | A heart whose color and fill texture scroll on the same wave |
 | `heartbeat` | shapes | A beating heart |
 | `moon_gradient` | space | `moon.txt` with stars twinkling out of step with each other |
@@ -93,6 +94,25 @@ the name of a divider art file:
 
 Divider colors: `cyan`, `green`, `lavender`, `orange`, `red`, `white`, `yellow`,
 plus the uncolored `divider.txt`.
+
+`figlet_text` takes the text to draw, then flags:
+
+```sh
+./animate figlet_text "Hello there"
+./animate figlet_text "Hello" --font small --color rainbow --style wave --speed fast
+./animate figlet_text "Hello" --color cyan --style wave-h --speed slow
+```
+
+| Flag | Values | Default |
+|---|---|---|
+| `text` | any string | `hello` |
+| `--font` | any figlet font name (`figlet -I2` lists the font directory) | `roman` |
+| `--color` | `rainbow`, `cyan`, `lavender`, `green`, `yellow`, `orange`, `red`, `white` | `rainbow` |
+| `--style` | `wave` (sweeps down), `wave-h` (sweeps right), `pulse` (all in unison) | `wave` |
+| `--speed` | `slow`, `medium`, `fast` | `medium` |
+
+`rainbow` travels through the palette; a single color shimmers in lighter and
+darker hues of itself.
 
 ## Static art
 
