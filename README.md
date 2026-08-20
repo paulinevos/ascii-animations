@@ -102,3 +102,22 @@ plus the uncolored `divider.txt`.
 `rainbow` travels through the palette; a single color shimmers in lighter and
 darker hues of itself.
 
+### Hearts
+
+```sh
+./animate heart_gradient
+./animate heart_gradient --size small --color red --style pulse
+./animate heart_gradient --fill glyphs --style wave-h
+```
+
+| Flag | Values | Default |
+|---|---|---|
+| `--size` | `large` (from the heart equation), `small` (the seven-row one from `thankyou_gradient`) | `large` |
+| `--color` | as above | `rainbow` |
+| `--style` | as above | `wave` |
+| `--fill` | as above | `ramp` |
+| `--speed` | `slow`, `medium`, `fast` | `medium` |
+
+`--color`, `--style`, `--fill` and `--speed` are shared with `figlet_text`, and
+come from `animation/gradient.py`.
+
