@@ -87,6 +87,7 @@ plus the uncolored `divider.txt`.
 ./animate figlet_text "Hello there"
 ./animate figlet_text "Hello" --font small --color rainbow --style wave --speed fast
 ./animate figlet_text "Hello" --color cyan --style wave-h --speed slow
+./animate figlet_text "Hello" --fill ramp
 ```
 
 | Flag | Values | Default |
@@ -95,6 +96,7 @@ plus the uncolored `divider.txt`.
 | `--font` | any figlet font name (`figlet -I2` lists the font directory) | `roman` |
 | `--color` | `rainbow`, `cyan`, `lavender`, `green`, `yellow`, `orange`, `red`, `white` | `rainbow` |
 | `--style` | `wave` (sweeps down), `wave-h` (sweeps right), `pulse` (all in unison) | `wave` |
+| `--fill` | `glyphs`, or `ramp` for letters filled from a density ramp that scrolls with the color | `glyphs` |
 | `--speed` | `slow`, `medium`, `fast` | `medium` |
 
 `rainbow` travels through the palette; a single color shimmers in lighter and

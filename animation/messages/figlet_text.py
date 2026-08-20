@@ -10,11 +10,17 @@ sweeps it left to right along them, and `pulse` cycles the whole block in
 unison. `rainbow` travels through the Dracula palette; a single color instead
 shimmers in lighter and darker hues of itself, the way the dividers do.
 
+`--fill ramp` swaps the letterforms for characters off a density ramp, each
+cell read at the phase its own color is read at, so the texture scrolls with
+the gradient. That is the effect the heart in thankyou_gradient has, and it
+works with any of the three styles.
+
 Requires figlet on PATH. Ctrl-C to stop.
 """
 
 import argparse
 import math
+import random
 import shutil
 import subprocess
 import sys
@@ -46,6 +52,14 @@ SPEEDS = {"slow": 0.12, "medium": 0.07, "fast": 0.035}
 WAVE = 18  # columns per gradient cycle, for the horizontal sweep
 LIGHTEN = 0.55  # how far a single color mixes toward white at the crest
 DARKEN = 0.45  # how far it mixes toward black in the trough
+
+# Density ramp for the "ramp" fill, lightest to densest. The same ramp, jitter
+# and seed the heart in thankyou_gradient uses, so the two read as one effect.
+# It starts at ":" rather than "." so the letters don't thin out to nearly
+# nothing in the light bands.
+DENSITY = ":;+*=%#@"
+NOISE = 2.2  # per-cell jitter in ramp steps; 0 = clean bands, higher = grainier
+SEED = 7  # fixed so the grain holds still rather than flickering per frame
 
 
 def figlet(text, font):
@@ -96,25 +110,83 @@ def painted(rgb, text):
     return f"\033[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m{text}{RESET}"
 
 
-def wave(color, block, step):
+def glyphs(line, y, phase_at, grain):
+    """The line exactly as figlet drew it."""
+    return line
+
+
+def textured(line, y, phase_at, grain):
+    """The line's glyph cells swapped for characters off the density ramp.
+
+    Every cell reads the ramp at the phase its own color is read at, so the
+    texture scrolls along with the gradient instead of sitting still under it.
+    This is what the heart in thankyou_gradient does.
+    """
+    return "".join(
+        speckled(char, phase_at(x), grain[y][x]) for x, char in enumerate(line)
+    )
+
+
+def speckled(char, phase, jitter):
+    if char == " ":
+        return char  # the gaps between letters stay gaps
+    return DENSITY[int(depth(phase) + jitter) % len(DENSITY)]
+
+
+def depth(phase):
+    """How far into the density ramp a phase falls."""
+    # A full color cycle spans two passes of the ramp, as the heart's does, so
+    # the texture peaks twice per trip round the palette.
+    return (phase % 1.0) * 2 % 1.0 * len(DENSITY)
+
+
+FILLS = {"glyphs": glyphs, "ramp": textured}
+
+
+def wave(color, block, step, fill, grain):
     """One color per row, travelling downward as the step advances."""
+    rows = len(block)
     return [
-        painted(color(y / len(block) - step / FRAMES), line)
+        painted(
+            color(y / rows - step / FRAMES),
+            fill(line, y, uniform(y, rows, step), grain),
+        )
         for y, line in enumerate(block)
     ]
 
 
-def pulse(color, block, step):
+def pulse(color, block, step, fill, grain):
     """The whole block in one color, cycling in unison."""
-    return [painted(color(step / FRAMES), line) for line in block]
+    return [
+        painted(color(step / FRAMES), fill(line, y, steady(step), grain))
+        for y, line in enumerate(block)
+    ]
 
 
-def wave_horizontal(color, block, step):
+def wave_horizontal(color, block, step, fill, grain):
     """The color varying across each row, travelling rightward."""
     return [
-        "".join(cell(color, x, char, step) for x, char in enumerate(line))
-        for line in block
+        "".join(
+            cell(color, x, char, step)
+            for x, char in enumerate(fill(line, y, sweeping(step), grain))
+        )
+        for y, line in enumerate(block)
     ]
+
+
+def uniform(y, rows, step):
+    """The phase of a row whose color does not vary along it."""
+    return lambda x: y / rows - step / FRAMES
+
+
+def steady(step):
+    """The phase of a block whose color is the same everywhere at once."""
+    return lambda x: step / FRAMES
+
+
+def sweeping(step):
+    """The phase of a cell in a row whose color travels rightward."""
+    return lambda x: x / WAVE - step / FRAMES
 
 
 def cell(color, x, char, step):
@@ -136,11 +208,24 @@ def trimmed(block):
     return [line.rstrip() for line in block]
 
 
-def build_frames(block, style, color):
+def grain_of(block):
+    """Per-cell jitter for the ramp fill, baked once for the whole run.
+
+    Drawn per cell rather than per frame: recomputed each frame the letters
+    would boil instead of holding still while the wave passes through them.
+    """
+    jitter = random.Random(SEED)
+    return [[jitter.uniform(-NOISE, NOISE) for _ in line] for line in block]
+
+
+def build_frames(block, style, color, fill):
     """One full loop, precomputed: cheap enough to redraw on a slide."""
+    grain = grain_of(block)
     return [
-        "".join(["\033[H", *(f"{line}\n" for line in style(color, block, step))])
-        for step in range(FRAMES)
+        "".join(["\033[H", *(f"{line}\n" for line in drawn)])
+        for drawn in (
+            style(color, block, step, fill, grain) for step in range(FRAMES)
+        )
     ]
 
 
@@ -166,6 +251,7 @@ def arguments():
         "--color", default="rainbow", choices=["rainbow", *COLORS]
     )
     parser.add_argument("--style", default="wave", choices=list(STYLES))
+    parser.add_argument("--fill", default="glyphs", choices=list(FILLS))
     parser.add_argument("--speed", default="medium", choices=list(SPEEDS))
     return parser.parse_args()
 
@@ -176,7 +262,9 @@ def main():
 
     options = arguments()
     block = trimmed(figlet(options.text, options.font))
-    frames = build_frames(block, STYLES[options.style], color_of(options.color))
+    frames = build_frames(
+        block, STYLES[options.style], color_of(options.color), FILLS[options.fill]
+    )
     animate(frames, SPEEDS[options.speed])
 
 
