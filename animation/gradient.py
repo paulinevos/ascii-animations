@@ -39,6 +39,21 @@ COLORS = {
 }
 RESET = "\033[0m"
 
+# MongoDB's brand greens, for its leaf. The ramp returns the way it came --
+# bright, mid, dark, mid -- because a green palette that wrapped straight from
+# its darkest entry back to its brightest would show a seam every loop, where
+# the Dracula one gets away with it by wrapping round the hues.
+MONGODB = [
+    (0, 237, 100),  # spring green
+    (19, 170, 82),  # base green
+    (0, 104, 74),  # forest green
+    (19, 170, 82),  # base green again, coming back up
+]
+
+# The colorways that travel through several colors, as against the single
+# colors below them that shimmer in hues of themselves.
+RAMPS = {"rainbow": PALETTE, "mongodb": MONGODB}
+
 FRAMES = 48  # gradient resolution; also the number of steps in one full loop
 SPEEDS = {"slow": 0.12, "medium": 0.07, "fast": 0.035}
 WAVE = 18  # columns per gradient cycle, for the horizontal sweep
@@ -53,13 +68,17 @@ NOISE = 2.2  # per-cell jitter in ramp steps; 0 = clean bands, higher = grainier
 SEED = 7  # fixed so the grain holds still rather than flickering per frame
 
 
-def ramp(phase):
-    """Sample the palette as a continuous loop at position phase in [0, 1)."""
-    position = (phase % 1.0) * len(PALETTE)
-    index = int(position)
-    fraction = position - index
-    start, end = PALETTE[index % len(PALETTE)], PALETTE[(index + 1) % len(PALETTE)]
-    return tuple(round(a + (b - a) * fraction) for a, b in zip(start, end))
+def sampled(palette):
+    """A sampler reading a palette as a continuous loop over phase [0, 1)."""
+
+    def at(phase):
+        position = (phase % 1.0) * len(palette)
+        index = int(position)
+        fraction = position - index
+        start, end = palette[index % len(palette)], palette[(index + 1) % len(palette)]
+        return tuple(round(a + (b - a) * fraction) for a, b in zip(start, end))
+
+    return at
 
 
 def shade(rgb, level):
@@ -78,8 +97,8 @@ def shimmer(rgb):
 
 def color_of(name):
     """The phase-to-rgb function a colorway names."""
-    if name == "rainbow":
-        return ramp
+    if name in RAMPS:
+        return sampled(RAMPS[name])
     return shimmer(COLORS[name])
 
 
@@ -175,13 +194,14 @@ def cell(color, x, char, step):
 STYLES = {"wave": wave, "wave-h": wave_horizontal, "pulse": pulse}
 
 
-def add_wave_arguments(parser, fill="glyphs"):
+def add_wave_arguments(parser, fill="glyphs", color="rainbow"):
     """The flags every animation built on this module takes.
 
-    The fill default is the caller's: each animation keeps the look it already
-    had rather than all of them changing to one.
+    The fill and color defaults are the caller's: each animation keeps the look
+    it already had, or the one its subject calls for, rather than all of them
+    changing to one.
     """
-    parser.add_argument("--color", default="rainbow", choices=["rainbow", *COLORS])
+    parser.add_argument("--color", default=color, choices=[*RAMPS, *COLORS])
     parser.add_argument("--style", default="wave", choices=list(STYLES))
     parser.add_argument("--fill", default=fill, choices=list(FILLS))
     parser.add_argument("--speed", default="medium", choices=list(SPEEDS))

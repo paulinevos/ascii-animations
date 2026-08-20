@@ -121,3 +121,14 @@ darker hues of itself.
 `--color`, `--style`, `--fill` and `--speed` are shared with `figlet_text`, and
 come from `animation/gradient.py`.
 
+### MongoDB leaf
+
+```sh
+./animate mongodb_leaf
+./animate mongodb_leaf --style pulse --fill ramp
+./animate mongodb_leaf --color rainbow
+```
+
+Takes the same flags, and defaults to `--color mongodb`: the brand greens,
+which every animation can now use.
+
