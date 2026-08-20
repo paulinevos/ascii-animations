@@ -4,20 +4,51 @@
     animate sunset_gradient
     animate nature/sunset_gradient
     animate divider_gradient divider_green.txt
+    animate --info sunset_gradient
 
 Animations live in animation/<category>/, and a name may be given with or
 without its category. Any further arguments are passed on to the animation.
 With no name, or with a name that does not exist, it lists what is available.
 Ctrl-C to stop.
+
+--info prints the terminal size the animation needs as COLUMNS:ROWS instead of
+running it, so that a VHS .tape file can ask for the size rather than guess it.
 """
 
 import glob
 import os
+import re
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ANIMATIONS = os.path.join(HERE, "animation")
 EXTENSION = ".py"
+
+INFO_FLAG = "--info"
+# Every animation redraws by homing the cursor, so this marks a frame boundary.
+FRAME_START = "\033[H"
+# Frames are sampled rather than just the first one taken: a frame's size can
+# change over the loop — a heart that pulses wider, a line being typed — and
+# the terminal has to fit the largest. The count is high enough to cover a
+# whole loop of the longest animation, and being a count rather than a time
+# limit is what makes repeated runs agree.
+SAMPLED_FRAMES = 1024
+# The animations pace themselves with time.sleep between frames, which would
+# make measuring one take as long as watching it. Their frames are precomputed,
+# so stubbing sleep out changes nothing but how fast they arrive.
+UNPACED = (
+    "import runpy, sys, time;"
+    "sys.argv = sys.argv[1:];"
+    "time.sleep = lambda *ignored: None;"
+    "runpy.run_path(sys.argv[0], run_name='__main__')"
+)
+# Anything an animation might emit around its art: colors, erases, cursor
+# hiding. None of it occupies a cell, so it all comes off before measuring.
+ESCAPE = re.compile(r"\033(?:\[[0-9;?]*[a-zA-Z]|.)")
+# Animations that consult the terminal size expect room to draw in; measuring
+# them in a cramped one would measure the complaint instead of the art.
+ROOM = {"COLUMNS": "400", "LINES": "200"}
 
 
 def scripts():
@@ -63,23 +94,92 @@ def grouped():
     return categories
 
 
-def run(animation, arguments):
+def resolved(animation):
+    """The one script an animation name refers to, or an exit explaining why not."""
     matches = matching(animation)
     if not matches:
         sys.exit(f"There is no animation named {animation!r}.\n\n{usage()}")
     if len(matches) > 1:
         ambiguous = ", ".join(qualified_name_of(script) for script in matches)
         sys.exit(f"{animation!r} could mean any of: {ambiguous}")
+    return matches[0]
+
+
+def run(animation, arguments):
+    script = resolved(animation)
     # Hand the terminal over rather than spawning a child: the animation then
     # owns this process, so Ctrl-C, output buffering and cursor handling behave
     # exactly as they do when the script is run directly.
-    os.execv(sys.executable, [sys.executable, matches[0], *arguments])
+    os.execv(sys.executable, [sys.executable, script, *arguments])
+
+
+def captured(script, arguments):
+    """Whole frames from the animation, which is stopped once there are enough.
+
+    The animations never end on their own, so the only way to learn what they
+    draw is to watch them draw it and then cut them off.
+    """
+    animation = subprocess.Popen(
+        [sys.executable, "-c", UNPACED, script, *arguments],
+        stdout=subprocess.PIPE,
+        env={**os.environ, **ROOM},
+    )
+    try:
+        return frames_in(read_frames(animation))
+    finally:
+        animation.kill()
+        animation.wait()
+
+
+def read_frames(animation):
+    """Output read until it holds SAMPLED_FRAMES complete frames, or the animation ends.
+
+    Bytes are gathered and decoded only once at the end, because a chunk can
+    end halfway through a multi-byte glyph; decoding per chunk would turn that
+    glyph into two replacement characters and measure a column too many.
+    """
+    output = b""
+    while output.count(FRAME_START.encode()) <= SAMPLED_FRAMES + 1:
+        chunk = animation.stdout.read1()
+        if not chunk:
+            break
+        output += chunk
+    return output.decode("utf-8", "replace")
+
+
+def frames_in(output):
+    """The complete frames in captured output.
+
+    The first piece is the preamble before any frame and the last is a frame
+    still being written, so both are dropped: a half-drawn frame would measure
+    short.
+    """
+    return output.split(FRAME_START)[1:-1][:SAMPLED_FRAMES]
+
+
+def size_of(frames):
+    """Columns and rows: the widest line in any frame, and the most lines in one."""
+    lines = [ESCAPE.sub("", frame).splitlines() for frame in frames]
+    columns = max(len(line) for frame in lines for line in frame)
+    return columns, max(len(frame) for frame in lines)
+
+
+def info(animation, arguments):
+    frames = captured(resolved(animation), arguments)
+    if not frames:
+        sys.exit(f"{animation!r} drew no frames to measure.")
+    columns, rows = size_of(frames)
+    print(f"{columns}:{rows}")
 
 
 def main():
     if len(sys.argv) < 2:
         sys.exit(usage())
-    run(sys.argv[1], sys.argv[2:])
+    if sys.argv[1] != INFO_FLAG:
+        run(sys.argv[1], sys.argv[2:])
+    if len(sys.argv) < 3:
+        sys.exit(f"Usage: animate {INFO_FLAG} <animation> [arguments...]\n\n{usage()}")
+    info(sys.argv[2], sys.argv[3:])
 
 
 if __name__ == "__main__":
