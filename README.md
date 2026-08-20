@@ -132,3 +132,14 @@ come from `animation/gradient.py`.
 Takes the same flags, and defaults to `--color mongodb`: the brand greens,
 which every animation can now use.
 
+### PHP logo
+
+```sh
+./animate php_logo
+./animate php_logo --style wave-h --color rainbow
+./animate php_logo --font smslant
+```
+
+The slanted wordmark from figlet's `slant` inside the logo's ellipse, which is
+drawn around whatever the font gives. Defaults to `--color php`.
+

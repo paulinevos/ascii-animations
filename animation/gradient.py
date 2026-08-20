@@ -50,9 +50,18 @@ MONGODB = [
     (19, 170, 82),  # base green again, coming back up
 ]
 
+# PHP's indigos, for its logo. Returns the way it came, for the same reason
+# MONGODB does.
+PHP = [
+    (136, 146, 191),  # elephant blue
+    (119, 123, 180),  # logo indigo
+    (79, 91, 147),  # dark indigo
+    (119, 123, 180),  # logo indigo again, coming back up
+]
+
 # The colorways that travel through several colors, as against the single
 # colors below them that shimmer in hues of themselves.
-RAMPS = {"rainbow": PALETTE, "mongodb": MONGODB}
+RAMPS = {"rainbow": PALETTE, "mongodb": MONGODB, "php": PHP}
 
 FRAMES = 48  # gradient resolution; also the number of steps in one full loop
 SPEEDS = {"slow": 0.12, "medium": 0.07, "fast": 0.035}
