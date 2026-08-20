@@ -71,6 +71,15 @@ is optional, and only needed to disambiguate:
 Run it with no arguments to list what is
 available, grouped by category.
 
+Set `LOOP_ASCII=false` to draw an animation once and stop, rather than looping:
+
+```sh
+LOOP_ASCII=false ./animate sunset_gradient
+```
+
+presenterm runs every snippet in a deck when it loads and does not close their
+ptys, so looping animations exhaust the 511 macOS allows after a few reloads.
+
 Further arguments are passed through to the animation. `divider_gradient` takes
 the name of a divider art file:
 

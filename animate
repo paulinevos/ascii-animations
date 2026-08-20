@@ -5,17 +5,18 @@
     animate nature/sunset_gradient
     animate divider_gradient divider_green.txt
     animate --info sunset_gradient
-    animate --seconds 0 sunset_gradient
+    LOOP_ASCII=false animate sunset_gradient
 
 Animations live in animation/<category>/, and a name may be given with or
 without its category. Any further arguments are passed on to the animation.
 With no name, or with a name that does not exist, it lists what is available.
 Ctrl-C to stop.
 
-Animations stop on their own after two minutes, leaving their last frame on
-screen, because presenterm leaks a pty per animation every time it hot reloads
-a slide and macOS only has 511 of them. --seconds sets a different limit, and
---seconds 0 runs until Ctrl-C. It goes before the animation's name.
+LOOP_ASCII=false draws the animation once and stops, leaving that frame on
+screen. presenterm runs every snippet in a deck when it loads and neither reaps
+them nor closes their ptys, and macOS only has 511 ptys, so a looping animation
+per animated slide exhausts them after a few hot reloads. Anything else in
+LOOP_ASCII, or leaving it unset, loops until Ctrl-C.
 
 --info prints the terminal size the animation needs as COLUMNS:ROWS instead of
 running it, so that a VHS .tape file can ask for the size rather than guess it.
@@ -33,27 +34,23 @@ EXTENSION = ".py"
 
 INFO_FLAG = "--info"
 
-SECONDS_FLAG = "--seconds"
 # Animations loop until interrupted, and presenterm neither reaps them nor
-# closes their pty when it hot reloads a slide: every reload leaves another
-# animation running on another pty. macOS allows 511 in total
-# (kern.tty.ptmx_max), after which presenterm fails to start any snippet at all
-# with "failed to openpty: Device not configured". Stopping on our own after a
-# couple of minutes bounds how many can pile up. The last frame stays on screen,
-# so a slide left open goes static rather than blank.
-SECONDS = 120
-# SIGALRM's default action would kill the animation where it stands, leaving the
-# terminal with a hidden cursor. Raising KeyboardInterrupt instead lands in the
-# except/finally that every animation already has for Ctrl-C, so it puts the
-# cursor back on the way out and exits 0.
-TIMED = (
-    "import runpy, signal, sys;"
-    "seconds = int(sys.argv[1]);"
-    "sys.argv = sys.argv[2:];"
-    "signal.signal("
-    "signal.SIGALRM, lambda *ignored: (_ for _ in ()).throw(KeyboardInterrupt)"
-    ");"
-    "seconds and signal.alarm(seconds);"
+# closes their pty: it runs every snippet in the deck when it loads, so one hot
+# reload leaves one animation per animated slide running on a pty of its own.
+# macOS allows 511 in total (kern.tty.ptmx_max), after which presenterm cannot
+# start any snippet at all and reports "failed to openpty: Device not
+# configured". Setting LOOP_ASCII=false draws each animation once and leaves it
+# there, which is all a slide can show anyway when every snippet ran at load.
+LOOP = "LOOP_ASCII"
+NOT_LOOPING = {"false", "0", "no", "off"}
+# Every animation writes a frame and then sleeps, so a sleep that raises instead
+# of returning stops it with exactly one frame on screen. KeyboardInterrupt is
+# the exception to raise: it lands in the except/finally that every animation
+# already has for Ctrl-C, so the cursor goes back and the exit status stays 0.
+STILL = (
+    "import runpy, sys, time;"
+    "sys.argv = sys.argv[1:];"
+    "time.sleep = lambda *ignored: (_ for _ in ()).throw(KeyboardInterrupt);"
     "runpy.run_path(sys.argv[0], run_name='__main__')"
 )
 # Every animation redraws by homing the cursor, so this marks a frame boundary.
@@ -135,32 +132,23 @@ def resolved(animation):
     return matches[0]
 
 
-def run(animation, arguments, seconds):
+def looping():
+    """Whether to animate at all, from the environment.
+
+    Read here rather than in each animation so that all of them answer to it
+    without every one growing a flag of its own.
+    """
+    return os.environ.get(LOOP, "").strip().lower() not in NOT_LOOPING
+
+
+def run(animation, arguments):
     script = resolved(animation)
     # Hand the terminal over rather than spawning a child: the animation then
     # owns this process, so Ctrl-C, output buffering and cursor handling behave
     # exactly as they do when the script is run directly.
-    os.execv(
-        sys.executable,
-        [sys.executable, "-c", TIMED, str(seconds), script, *arguments],
-    )
-
-
-def runtime_from(arguments):
-    """The seconds to run for, and the arguments with that flag removed.
-
-    Taken here rather than in each animation so that all of them get the limit
-    without every one growing a flag of its own. It has to come before the
-    animation's name, since anything after that belongs to the animation.
-    """
-    if arguments[:1] != [SECONDS_FLAG]:
-        return SECONDS, arguments
-    if len(arguments) < 2 or not arguments[1].isdigit():
-        sys.exit(
-            f"{SECONDS_FLAG} takes a whole number of seconds, or 0 to keep "
-            f"going until Ctrl-C."
-        )
-    return int(arguments[1]), arguments[2:]
+    if looping():
+        os.execv(sys.executable, [sys.executable, script, *arguments])
+    os.execv(sys.executable, [sys.executable, "-c", STILL, script, *arguments])
 
 
 def captured(script, arguments):
@@ -223,14 +211,13 @@ def info(animation, arguments):
 
 
 def main():
-    seconds, arguments = runtime_from(sys.argv[1:])
-    if not arguments:
+    if len(sys.argv) < 2:
         sys.exit(usage())
-    if arguments[0] != INFO_FLAG:
-        run(arguments[0], arguments[1:], seconds)
-    if len(arguments) < 2:
+    if sys.argv[1] != INFO_FLAG:
+        run(sys.argv[1], sys.argv[2:])
+    if len(sys.argv) < 3:
         sys.exit(f"Usage: animate {INFO_FLAG} <animation> [arguments...]\n\n{usage()}")
-    info(arguments[1], arguments[2:])
+    info(sys.argv[2], sys.argv[3:])
 
 
 if __name__ == "__main__":
