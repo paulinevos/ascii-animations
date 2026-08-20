@@ -97,10 +97,18 @@ plus the uncolored `divider.txt`.
 | `--color` | `rainbow`, `cyan`, `lavender`, `green`, `yellow`, `orange`, `red`, `white` | `rainbow` |
 | `--style` | `wave` (sweeps down), `wave-h` (sweeps right), `pulse` (all in unison) | `wave` |
 | `--fill` | `glyphs`, or `ramp` for letters filled from a density ramp that scrolls with the color | `glyphs` |
+| `--align` | `left`, `center`, `right` — shifts each line of stacked text within the widest | `left` |
 | `--speed` | `slow`, `medium`, `fast` | `medium` |
 
 `rainbow` travels through the palette; a single color shimmers in lighter and
 darker hues of itself.
+
+A newline in the text stacks a second block below the first, which is what
+`--align` is for:
+
+```sh
+./animate figlet_text "$(printf 'thank you\nLaracon')" --font small --align center
+```
 
 ### Hearts
 
